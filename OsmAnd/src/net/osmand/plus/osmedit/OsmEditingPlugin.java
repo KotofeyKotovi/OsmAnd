@@ -79,6 +79,7 @@ public class OsmEditingPlugin extends OsmandPlugin {
 	private OpenstreetmapRemoteUtil remoteUtil;
 	private OsmBugsRemoteUtil remoteNotesUtil;
 	private OsmBugsLocalUtil localNotesUtil;
+	private boolean usedOnMap = false;
 
 	public OsmEditingPlugin(OsmandApplication app) {
 		super(app);
@@ -461,7 +462,7 @@ public class OsmEditingPlugin extends OsmandPlugin {
 		String pwd = settings.USER_PASSWORD.get();
 		String authToken = settings.USER_ACCESS_TOKEN.get();
 		if ((Algorithms.isEmpty(name) || Algorithms.isEmpty(pwd)) && Algorithms.isEmpty(authToken)) {
-			LoginBottomSheetFragment.showInstance(activity.getSupportFragmentManager(), fragment);
+			LoginBottomSheetFragment.showInstance(activity.getSupportFragmentManager(), fragment, usedOnMap);
 			return false;
 		} else {
 			SendGpxBottomSheetFragment.showInstance(activity.getSupportFragmentManager(), fragment, info);

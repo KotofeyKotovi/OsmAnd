@@ -102,10 +102,11 @@ public class LoginBottomSheetFragment extends MenuBottomSheetDialogFragment impl
 		return (DialogButtonType.SECONDARY);
 	}
 
-	public static void showInstance(@NonNull FragmentManager fragmentManager, @Nullable Fragment targetFragment) {
+	public static void showInstance(@NonNull FragmentManager fragmentManager, @Nullable Fragment targetFragment, boolean usedOnMap) {
 		try {
 			if (!fragmentManager.isStateSaved()) {
 				LoginBottomSheetFragment fragment = new LoginBottomSheetFragment();
+				fragment.setUsedOnMap(usedOnMap);
 				fragment.setTargetFragment(targetFragment, 0);
 				fragment.show(fragmentManager, TAG);
 			}

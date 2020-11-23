@@ -121,6 +121,7 @@ public class OsmEditsFragment extends OsmAndListFragment implements ProgressDial
 	private int selectedItemPosition = -1;
 
 	private int exportType;
+	private boolean usedOnMap = false;
 
 	public static void getOsmEditView(View v, OsmPoint child, OsmandApplication app) {
 		TextView viewName = ((TextView) v.findViewById(R.id.name));
@@ -643,7 +644,7 @@ public class OsmEditsFragment extends OsmAndListFragment implements ProgressDial
 				if (isLogged) {
 					SendPoiBottomSheetFragment.showInstance(getChildFragmentManager(), points);
 				} else {
-					LoginBottomSheetFragment.showInstance(activity.getSupportFragmentManager(), this);
+					LoginBottomSheetFragment.showInstance(activity.getSupportFragmentManager(), this, usedOnMap);
 				}
 			} else {
 				SendOsmNoteBottomSheetFragment.showInstance(getChildFragmentManager(), points);

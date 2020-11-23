@@ -32,6 +32,7 @@ public class EditPOIMenuController extends MenuController {
 	private OsmEditingPlugin plugin;
 	private String categoryDescr;
 	private String actionStr;
+	private boolean usedOnMap = true;
 
 	public EditPOIMenuController(@NonNull MapActivity mapActivity, @NonNull PointDescription pointDescription, @NonNull OsmPoint osmPoint) {
 		super(new EditPOIMenuBuilder(mapActivity, osmPoint), pointDescription, mapActivity);
@@ -59,7 +60,7 @@ public class EditPOIMenuController extends MenuController {
 							SendPoiBottomSheetFragment.showInstance(activity.getSupportFragmentManager(),
 									new OsmPoint[]{getOsmPoint()});
 						} else {
-							LoginBottomSheetFragment.showInstance(activity.getSupportFragmentManager(), null);
+							LoginBottomSheetFragment.showInstance(activity.getSupportFragmentManager(), null, usedOnMap);
 						}
 					} else if (point instanceof OsmNotesPoint) {
 						SendOsmNoteBottomSheetFragment.showInstance(activity.getSupportFragmentManager(),

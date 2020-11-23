@@ -87,7 +87,7 @@ public class OsmLoginDataBottomSheet extends BasePreferenceBottomSheet {
 
 	@Override
 	protected int getRightBottomButtonTextId() {
-		return R.string.user_login;
+		return R.string.shared_string_login;
 	}
 
 	@Override

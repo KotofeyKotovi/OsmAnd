@@ -40,6 +40,7 @@ public class OsmEditingFragment extends BaseSettingsFragment implements OnPrefer
 	private static final String OPEN_OSM_EDITS = "open_osm_edits";
 	public static final String OSM_LOGIN_DATA = "osm_login_data";
 	private static final String OSM_EDITING_INFO = "osm_editing_info";
+	private boolean usedOnMap = false;
 
 	private OsmOAuthAuthorizationAdapter authorizationAdapter;
 
@@ -196,7 +197,7 @@ public class OsmEditingFragment extends BaseSettingsFragment implements OnPrefer
 		} else if (OSM_LOGIN_DATA.equals(prefId)) {
 			FragmentManager fragmentManager = getFragmentManager();
 			if (fragmentManager != null) {
-				LoginBottomSheetFragment.showInstance(fragmentManager, this);
+				LoginBottomSheetFragment.showInstance(fragmentManager, this, usedOnMap);
 				return true;
 			}
 		} else if (OSM_LOGOUT.equals(prefId)) {
