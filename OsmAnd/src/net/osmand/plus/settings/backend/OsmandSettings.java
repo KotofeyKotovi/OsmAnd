@@ -1008,6 +1008,18 @@ public class OsmandSettings {
 	}
 
 	public final CommonPreference<Integer> APP_MODE_ORDER = new IntPreference(this, "app_mode_order", 0).makeProfile().cache();
+	{
+		APP_MODE_ORDER.setModeDefaultValue(ApplicationMode.DEFAULT, 0);
+		APP_MODE_ORDER.setModeDefaultValue(ApplicationMode.CAR, 1);
+		APP_MODE_ORDER.setModeDefaultValue(ApplicationMode.BICYCLE, 2);
+		APP_MODE_ORDER.setModeDefaultValue(ApplicationMode.PEDESTRIAN, 3);
+		APP_MODE_ORDER.setModeDefaultValue(ApplicationMode.TRUCK, 4);
+		APP_MODE_ORDER.setModeDefaultValue(ApplicationMode.MOTORCYCLE, 5);
+		APP_MODE_ORDER.setModeDefaultValue(ApplicationMode.PUBLIC_TRANSPORT, 6);
+		APP_MODE_ORDER.setModeDefaultValue(ApplicationMode.BOAT, 7);
+		APP_MODE_ORDER.setModeDefaultValue(ApplicationMode.AIRCRAFT, 8);
+		APP_MODE_ORDER.setModeDefaultValue(ApplicationMode.SKI, 9);
+	}
 
 	public final OsmandPreference<Float> SWITCH_MAP_DIRECTION_TO_COMPASS_KMH =
 			new FloatPreference(this, "speed_for_map_to_direction_of_movement", 0f).makeProfile();

@@ -92,6 +92,14 @@ public class ApplicationMode {
 			.icon(R.drawable.ic_action_pedestrian_dark)
 			.description(R.string.base_profile_descr_pedestrian).reg();
 
+	public static final ApplicationMode TRUCK = create(ApplicationMode.CAR, R.string.app_mode_truck, "truck")
+			.icon(R.drawable.ic_action_truck_dark)
+			.description(R.string.app_mode_truck).reg();
+
+	public static final ApplicationMode MOTORCYCLE = create(ApplicationMode.CAR, R.string.app_mode_motorcycle, "motorcycle")
+			.icon(R.drawable.ic_action_motorcycle_dark)
+			.description(R.string.app_mode_motorcycle).reg();
+
 	public static final ApplicationMode PUBLIC_TRANSPORT = createBase(R.string.app_mode_public_transport, "public_transport")
 			.icon(R.drawable.ic_action_bus_dark)
 			.description(R.string.base_profile_descr_public_transport).reg();
@@ -108,13 +116,6 @@ public class ApplicationMode {
 			.icon(R.drawable.ic_action_skiing)
 			.description(R.string.base_profile_descr_ski).reg();
 
-	public static final ApplicationMode TRUCK = create(ApplicationMode.CAR, R.string.app_mode_truck, "truck")
-			.icon(R.drawable.ic_action_truck_dark)
-			.description(R.string.app_mode_truck).reg();
-
-	public static final ApplicationMode MOTORCYCLE = create(ApplicationMode.CAR, R.string.app_mode_motorcycle, "motorcycle")
-			.icon(R.drawable.ic_action_motorcycle_dark)
-			.description(R.string.app_mode_motorcycle).reg();
 
 	public static List<ApplicationMode> values(OsmandApplication app) {
 		if (customizationListener == null) {
@@ -512,6 +513,8 @@ public class ApplicationMode {
 			mode.app = app;
 			mode.updateAppModeIcon();
 		}
+		TRUCK.setOrder(3);
+		MOTORCYCLE.setOrder(3);
 	}
 
 	private static void initCustomModes(OsmandApplication app) {
