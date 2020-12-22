@@ -428,9 +428,9 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 		}
 
 		private List<ILineDataSet> getDataSets(LineChart chart,
-		                                       GPXTabItemType tabType,
-		                                       LineGraphType firstType,
-		                                       LineGraphType secondType) {
+											   GPXTabItemType tabType,
+											   LineGraphType firstType,
+											   LineGraphType secondType) {
 			List<ILineDataSet> dataSets = dataSetsMap.get(tabType);
 			if (dataSets == null && chart != null) {
 				GPXTrackAnalysis analysis = gpxItem.analysis;
@@ -730,7 +730,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 							view.findViewById(R.id.overflow_menu).setOnClickListener(new View.OnClickListener() {
 								@Override
 								public void onClick(View view) {
-									TrackActivity activity = getTrackActivity();
+									FragmentActivity activity = getActivity();
 									if (activity != null) {
 										generalPopupMenu = new IconPopupMenu(activity, view.findViewById(R.id.overflow_menu));
 										Menu menu = generalPopupMenu.getMenu();
@@ -745,7 +745,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 													editSegment();
 													return true;
 												} else if (i == R.id.action_delete) {
-													TrackActivity activity = getTrackActivity();
+													FragmentActivity activity = getActivity();
 													if (activity != null) {
 														AlertDialog.Builder builder = new AlertDialog.Builder(activity);
 														builder.setMessage(R.string.recording_delete_confirm);
@@ -844,7 +844,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 							view.findViewById(R.id.overflow_menu).setOnClickListener(new View.OnClickListener() {
 								@Override
 								public void onClick(View view) {
-									TrackActivity activity = getTrackActivity();
+									FragmentActivity activity = getActivity();
 									if (activity != null) {
 										altitudePopupMenu = new IconPopupMenu(activity, view.findViewById(R.id.overflow_menu));
 										Menu menu = altitudePopupMenu.getMenu();
@@ -941,7 +941,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 							view.findViewById(R.id.overflow_menu).setOnClickListener(new View.OnClickListener() {
 								@Override
 								public void onClick(View view) {
-									TrackActivity activity = getTrackActivity();
+									FragmentActivity activity = getActivity();
 									if (activity != null) {
 										IconPopupMenu popupMenu = new IconPopupMenu(activity, view.findViewById(R.id.overflow_menu));
 										Menu menu = popupMenu.getMenu();
@@ -986,8 +986,8 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 		}
 
 		private void deleteAndSaveSegment() {
-			TrackActivity trackActivity = getTrackActivity();
-			if (trackActivity != null && deleteSegment()) {
+			FragmentActivity activity = getActivity();
+			if (activity != null && deleteSegment()) {
 				GPXFile gpx = getGpx();
 				if (gpx != null && fragmentAdapter != null) {
 					boolean showOnMap = fragmentAdapter.isShowOnMap();

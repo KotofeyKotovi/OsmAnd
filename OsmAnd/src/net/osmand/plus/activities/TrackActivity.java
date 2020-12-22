@@ -19,7 +19,6 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import net.osmand.AndroidUtils;
-import net.osmand.GPXUtilities;
 import net.osmand.GPXUtilities.GPXFile;
 import net.osmand.GPXUtilities.WptPt;
 import net.osmand.IndexConstants;
@@ -43,6 +42,7 @@ import net.osmand.plus.myplaces.TrackPointFragment;
 import net.osmand.plus.myplaces.TrackSegmentFragment;
 import net.osmand.plus.settings.backend.OsmAndAppCustomization;
 import net.osmand.plus.settings.backend.OsmandSettings;
+import net.osmand.plus.track.GPXFileLoaderTask;
 import net.osmand.plus.views.AddGpxPointBottomSheetHelper.NewGpxPoint;
 
 import java.io.File;
@@ -112,6 +112,14 @@ public class TrackActivity extends TabActivity {
 	@Nullable
 	public TrackBitmapDrawer getTrackBitmapDrawer() {
 		return trackBitmapDrawer;
+	}
+
+	public File getFile() {
+		return file;
+	}
+
+	public boolean isStopped() {
+		return stopped;
 	}
 
 	public void addPoint(PointDescription pointDescription) {
@@ -331,7 +339,7 @@ public class TrackActivity extends TabActivity {
 		return gpxDataItem;
 	}
 
-	private void onGPXFileReady(@Nullable GPXFile gpxFile) {
+	public void onGPXFileReady(@Nullable GPXFile gpxFile) {
 		setGpx(gpxFile);
 		setGpxDataItem(file != null ? app.getGpxDbHelper().getItem(file) : null);
 
@@ -421,85 +429,5 @@ public class TrackActivity extends TabActivity {
 
 	public boolean isJoinSegments() {
 		return gpxDataItem != null && gpxDataItem.isJoinSegments();
-	}
-
-	private static class GPXFileLoaderTask extends AsyncTask<Void, Void, GPXFile> {
-
-		private OsmandApplication app;
-		private WeakReference<TrackActivity> activityRef;
-		private File file;
-		private boolean showTemporarily;
-
-		private TrackActivity getTrackActivity() {
-			return activityRef.get();
-		}
-
-		GPXFileLoaderTask(@NonNull TrackActivity activity) {
-			this.activityRef = new WeakReference<>(activity);
-			app = activity.getMyApplication();
-			file = activity.file;
-		}
-
-		protected void onPreExecute() {
-			TrackActivity activity = getTrackActivity();
-			if (activity != null) {
-				activity.setSupportProgressBarIndeterminateVisibility(true);
-				Intent intent = activity.getIntent();
-				if (intent != null && intent.hasExtra(SHOW_TEMPORARILY)) {
-					showTemporarily = true;
-					intent.removeExtra(SHOW_TEMPORARILY);
-				}
-			}
-		}
-
-		@Override
-		protected GPXFile doInBackground(Void... params) {
-			long startTime = System.currentTimeMillis();
-			GPXFile result;
-			if (file == null) {
-				result = app.getSavingTrackHelper().getCurrentGpx();
-			} else {
-				SelectedGpxFile selectedGpxFile = app.getSelectedGpxHelper().getSelectedFileByPath(file.getAbsolutePath());
-				if (selectedGpxFile != null && selectedGpxFile.getGpxFile() != null && selectedGpxFile.getGpxFile().modifiedTime == file.lastModified()) {
-					result = selectedGpxFile.getGpxFile();
-				} else {
-					result = GPXUtilities.loadGPXFile(file);
-				}
-			}
-			if (result != null) {
-				result.addGeneralTrack();
-				long timeout = 200 - (System.currentTimeMillis() - startTime);
-				if (timeout > 0) {
-					try {
-						Thread.sleep(timeout);
-					} catch (InterruptedException e) {
-						// ignore
-					}
-				}
-			}
-			return result;
-		}
-
-		@Override
-		protected void onPostExecute(@Nullable GPXFile result) {
-			TrackActivity activity = getTrackActivity();
-			if (activity != null) {
-				activity.setSupportProgressBarIndeterminateVisibility(false);
-				if (result != null) {
-					final GpxSelectionHelper helper = app.getSelectedGpxHelper();
-					if (showTemporarily) {
-						helper.selectGpxFile(result, false, false);
-					} else {
-						final SelectedGpxFile selectedGpx = helper.getSelectedFileByPath(result.path);
-						if (selectedGpx != null && result.error == null) {
-							selectedGpx.setGpxFile(result, app);
-						}
-					}
-				}
-				if (!activity.stopped) {
-					activity.onGPXFileReady(result);
-				}
-			}
-		}
 	}
 }

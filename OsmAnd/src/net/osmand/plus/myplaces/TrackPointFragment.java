@@ -495,13 +495,13 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 	}
 
 	private void deleteItems() {
-		new DeletePointsTask(this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+		new DeletePointsTask(app, getGpx(), getSelectedItems(), this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 	}
 
 	private void addOrRemoveMapMarkersSyncGroup() {
 		final MapMarkersHelper markersHelper = app.getMapMarkersHelper();
 
-		TrackActivity activity = getTrackActivity();
+		FragmentActivity activity = getActivity();
 		if (activity == null) {
 			return;
 		}
@@ -536,7 +536,7 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 					.setAction(R.string.shared_string_undo, new View.OnClickListener() {
 						@Override
 						public void onClick(View v) {
-							TrackActivity trackActivity = getTrackActivity();
+							FragmentActivity trackActivity = getActivity();
 							if (trackActivity != null) {
 								if (markersRemoved) {
 									if (gpxFile != null) {
@@ -606,7 +606,7 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 	}
 
 	private void selectFavoritesImpl() {
-		TrackActivity activity = getTrackActivity();
+		FragmentActivity activity = getActivity();
 		if (activity != null && getSelectedItemsCount() > 0) {
 			AlertDialog.Builder b = new AlertDialog.Builder(activity);
 			final EditText editText = new EditText(activity);
@@ -684,7 +684,7 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 		} else {
 			GPXFile gpx = item.group.getGpx();
 			if (gpx != null) {
-				TrackActivity trackActivity = getTrackActivity();
+				FragmentActivity trackActivity = getActivity();
 				if (trackActivity != null && fragmentAdapter != null) {
 					boolean gpxFileSelected = fragmentAdapter.isGpxFileSelected(gpx);
 					if (!gpxFileSelected) {
@@ -738,6 +738,23 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 	public void updateHeader() {
 		if (fragmentAdapter != null) {
 			fragmentAdapter.updateHeader(0);
+		}
+	}
+
+	@Override
+	public void onPointsDeletionStarted() {
+		showProgressBar();
+	}
+
+	@Override
+	public void onPointsDeleted() {
+		selectedItems.clear();
+		selectedGroups.clear();
+
+		hideProgressBar();
+		List<GpxDisplayGroup> groups = getOriginalGroups();
+		if (groups != null) {
+			adapter.synchronizeGroups(groups);
 		}
 	}
 
@@ -1199,9 +1216,6 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 
 	public class PointsFilter extends Filter {
 
-		PointsFilter() {
-		}
-
 		@Override
 		protected FilterResults performFiltering(CharSequence constraint) {
 			FilterResults results = new FilterResults();
@@ -1241,79 +1255,6 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 			}
 			adapter.notifyDataSetChanged();
 			expandAllGroups();
-		}
-	}
-
-	private static class DeletePointsTask extends AsyncTask<Void, Void, Void> {
-
-		private OsmandApplication app;
-		private WeakReference<TrackPointFragment> fragmentRef;
-		private GPXFile gpx;
-		private Set<GpxDisplayItem> selectedItems;
-
-		DeletePointsTask(TrackPointFragment fragment) {
-			this.app = fragment.getMyApplication();
-			this.fragmentRef = new WeakReference<>(fragment);
-			this.gpx = fragment.getGpx();
-			this.selectedItems = fragment.getSelectedItems();
-		}
-
-		@Override
-		protected void onPreExecute() {
-			TrackPointFragment fragment = fragmentRef.get();
-			if (fragment != null) {
-				fragment.showProgressBar();
-			}
-		}
-
-		@Override
-		protected Void doInBackground(Void... params) {
-			SavingTrackHelper savingTrackHelper = app.getSavingTrackHelper();
-			if (gpx != null) {
-				for (GpxDisplayItem item : selectedItems) {
-					if (gpx.showCurrentTrack) {
-						savingTrackHelper.deletePointData(item.locationStart);
-					} else {
-						if (item.group.getType() == GpxDisplayItemType.TRACK_POINTS) {
-							gpx.deleteWptPt(item.locationStart);
-						} else if (item.group.getType() == GpxDisplayItemType.TRACK_ROUTE_POINTS) {
-							gpx.deleteRtePt(item.locationStart);
-						}
-					}
-				}
-				if (!gpx.showCurrentTrack) {
-					GPXUtilities.writeGpxFile(new File(gpx.path), gpx);
-					boolean selected = app.getSelectedGpxHelper().getSelectedFileByPath(gpx.path) != null;
-					if (selected) {
-						app.getSelectedGpxHelper().setGpxFileToDisplay(gpx);
-					}
-				}
-				syncGpx(gpx);
-			}
-			return null;
-		}
-
-		@Override
-		protected void onPostExecute(Void aVoid) {
-			TrackPointFragment fragment = fragmentRef.get();
-			if (fragment != null) {
-				fragment.selectedItems.clear();
-				fragment.selectedGroups.clear();
-
-				fragment.hideProgressBar();
-				List<GpxDisplayGroup> groups = fragment.getOriginalGroups();
-				if (groups != null) {
-					fragment.adapter.synchronizeGroups(groups);
-				}
-			}
-		}
-
-		private void syncGpx(GPXFile gpxFile) {
-			MapMarkersHelper helper = app.getMapMarkersHelper();
-			MapMarkersGroup group = helper.getMarkersGroup(gpxFile);
-			if (group != null) {
-				helper.runSynchronization(group);
-			}
 		}
 	}
 }
