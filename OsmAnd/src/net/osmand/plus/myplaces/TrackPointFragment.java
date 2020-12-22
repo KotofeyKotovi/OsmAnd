@@ -41,7 +41,6 @@ import com.google.android.material.snackbar.Snackbar;
 
 import net.osmand.AndroidUtils;
 import net.osmand.Collator;
-import net.osmand.GPXUtilities;
 import net.osmand.GPXUtilities.GPXFile;
 import net.osmand.GPXUtilities.WptPt;
 import net.osmand.OsmAndCollator;
@@ -59,7 +58,6 @@ import net.osmand.plus.UiUtilities;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.activities.OsmandActionBarActivity;
 import net.osmand.plus.activities.OsmandBaseExpandableListAdapter;
-import net.osmand.plus.activities.SavingTrackHelper;
 import net.osmand.plus.activities.TrackActivity;
 import net.osmand.plus.base.OsmandExpandableListFragment;
 import net.osmand.plus.base.PointImageDrawable;
@@ -67,14 +65,15 @@ import net.osmand.plus.helpers.GpxUiHelper;
 import net.osmand.plus.mapmarkers.CoordinateInputDialogFragment;
 import net.osmand.plus.mapmarkers.MapMarkersGroup;
 import net.osmand.plus.mapmarkers.MapMarkersHelper;
+import net.osmand.plus.myplaces.DeletePointsTask.OnPointsDeleteListener;
 import net.osmand.plus.myplaces.TrackBitmapDrawer.TrackBitmapDrawerListener;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.track.SaveGpxAsyncTask.SaveGpxListener;
+import net.osmand.plus.track.TrackDisplayHelper;
 import net.osmand.plus.widgets.TextViewEx;
 import net.osmand.util.Algorithms;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -88,7 +87,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 
-public class TrackPointFragment extends OsmandExpandableListFragment implements TrackBitmapDrawerListener {
+public class TrackPointFragment extends OsmandExpandableListFragment implements TrackBitmapDrawerListener, OnPointsDeleteListener {
 
 	public static final int SEARCH_ID = -1;
 	public static final int DELETE_ID = 2;
@@ -105,10 +104,12 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 	private OsmandApplication app;
 	private TrackActivityFragmentAdapter fragmentAdapter;
 	final private PointGPXAdapter adapter = new PointGPXAdapter();
+	private GpxDisplayItemType[] filterTypes;
+	public TrackDisplayHelper displayHelper;
 
 	private boolean selectionMode;
-	private LinkedHashMap<GpxDisplayItemType, Set<GpxDisplayItem>> selectedItems = new LinkedHashMap<>();
-	private Set<Integer> selectedGroups = new LinkedHashSet<>();
+	private final LinkedHashMap<GpxDisplayItemType, Set<GpxDisplayItem>> selectedItems = new LinkedHashMap<>();
+	private final Set<Integer> selectedGroups = new LinkedHashSet<>();
 	private ActionMode actionMode;
 	private boolean updateEnable;
 	private boolean routePointsExpanded;
@@ -120,6 +121,7 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		this.app = getMyApplication();
+		this.displayHelper = requireTrackActivity().getDisplayHelper();
 	}
 
 	@Override
@@ -133,10 +135,13 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		mainView = inflater.inflate(R.layout.track_points_tree, container, false);
-		ExpandableListView listView = (ExpandableListView) mainView.findViewById(android.R.id.list);
+		ExpandableListView listView = mainView.findViewById(android.R.id.list);
 
-		fragmentAdapter = new TrackActivityFragmentAdapter(app, this, listView,
-				GpxDisplayItemType.TRACK_POINTS, GpxDisplayItemType.TRACK_ROUTE_POINTS);
+		filterTypes = new GpxDisplayItemType[2];
+		filterTypes[0] = GpxDisplayItemType.TRACK_POINTS;
+		filterTypes[1] = GpxDisplayItemType.TRACK_ROUTE_POINTS;
+
+		fragmentAdapter = new TrackActivityFragmentAdapter(app, this, listView, displayHelper, filterTypes);
 		fragmentAdapter.setShowMapOnly(true);
 		fragmentAdapter.setTrackBitmapSelectionSupported(false);
 		fragmentAdapter.setShowDescriptionCard(true);
@@ -192,7 +197,6 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 		}
 	}
 
-
 	private int getSelectedItemsCount() {
 		int count = 0;
 		for (Set<GpxDisplayItem> set : selectedItems.values()) {
@@ -213,21 +217,23 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 		return result;
 	}
 
-	@Nullable
-	public TrackActivity getTrackActivity() {
-		return (TrackActivity) getActivity();
+	@NonNull
+	public TrackActivity requireTrackActivity() {
+		FragmentActivity activity = getActivity();
+		if (!(activity instanceof TrackActivity)) {
+			throw new IllegalStateException("Fragment " + this + " not attached to an activity.");
+		}
+		return (TrackActivity) activity;
 	}
 
 	@Nullable
 	private GPXFile getGpx() {
-		TrackActivity activity = getTrackActivity();
-		return activity != null ? activity.getGpx() : null;
+		return displayHelper.getGpx();
 	}
 
 	@Nullable
 	private GpxDataItem getGpxDataItem() {
-		TrackActivity activity = getTrackActivity();
-		return activity != null ? activity.getGpxDataItem() : null;
+		return displayHelper.getGpxDataItem();
 	}
 
 	private void expandAllGroups() {
@@ -250,7 +256,7 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 
 	@Nullable
 	private List<GpxDisplayGroup> getOriginalGroups() {
-		return fragmentAdapter != null ? fragmentAdapter.getOriginalGroups() : null;
+		return displayHelper.getOriginalGroups(filterTypes);
 	}
 
 	public void setContent() {
@@ -348,7 +354,7 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 			}
 		};
 	}
-	
+
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		menu.clear();
@@ -663,7 +669,7 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 			routePointsExpanded = true;
 			adapter.notifyDataSetChanged();
 		} else if (selectionMode) {
-			CheckBox ch = (CheckBox) v.findViewById(R.id.toggle_item);
+			CheckBox ch = v.findViewById(R.id.toggle_item);
 			ch.setChecked(!ch.isChecked());
 			if (ch.isChecked()) {
 				Set<GpxDisplayItem> set = selectedItems.get(item.group.getType());
@@ -937,17 +943,17 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 			if (row == null) {
 				LayoutInflater inflater = getLayoutInflater();
 				row = inflater.inflate(R.layout.wpt_list_item, parent, false);
-				ImageView options = (ImageView) row.findViewById(R.id.options);
+				ImageView options = row.findViewById(R.id.options);
 				options.setFocusable(false);
 				options.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_overflow_menu_white));
 			}
-			ImageView icon = (ImageView) row.findViewById(R.id.icon);
-			TextView groupTitle = (TextView) row.findViewById(R.id.bold_label);
-			TextView title = (TextView) row.findViewById(R.id.label);
-			TextViewEx button = (TextViewEx) row.findViewById(R.id.button);
-			TextView description = (TextView) row.findViewById(R.id.description);
-			ImageView expandImage = (ImageView) row.findViewById(R.id.expand_image);
-			ImageView options = (ImageView) row.findViewById(R.id.options);
+			ImageView icon = row.findViewById(R.id.icon);
+			TextView groupTitle = row.findViewById(R.id.bold_label);
+			TextView title = row.findViewById(R.id.label);
+			TextViewEx button = row.findViewById(R.id.button);
+			TextView description = row.findViewById(R.id.description);
+			ImageView expandImage = row.findViewById(R.id.expand_image);
+			ImageView options = row.findViewById(R.id.options);
 
 			button.setVisibility(View.GONE);
 
@@ -1022,7 +1028,7 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 			}
 			row.findViewById(R.id.group_divider).setVisibility(group.getType() == GpxDisplayItemType.TRACK_ROUTE_POINTS ? View.VISIBLE : View.GONE);
 
-			final CheckBox ch = (CheckBox) row.findViewById(R.id.toggle_item);
+			final CheckBox ch = row.findViewById(R.id.toggle_item);
 			if (selectionMode) {
 				ch.setVisibility(View.VISIBLE);
 				ch.setChecked(selectedGroups.contains(groupPosition));
@@ -1094,7 +1100,7 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 			if (row == null) {
 				LayoutInflater inflater = getLayoutInflater();
 				row = inflater.inflate(R.layout.wpt_list_item, parent, false);
-				ImageView options = (ImageView) row.findViewById(R.id.options);
+				ImageView options = row.findViewById(R.id.options);
 				options.setFocusable(false);
 				options.setImageDrawable(iconsCache.getThemedIcon(R.drawable.ic_overflow_menu_white));
 			}
@@ -1106,12 +1112,12 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 				row.findViewById(R.id.list_divider).setVisibility(View.VISIBLE);
 			}
 
-			ImageView icon = (ImageView) row.findViewById(R.id.icon);
-			TextView title = (TextView) row.findViewById(R.id.label);
-			TextViewEx button = (TextViewEx) row.findViewById(R.id.button);
-			TextView description = (TextView) row.findViewById(R.id.description);
-			ImageView expandImage = (ImageView) row.findViewById(R.id.expand_image);
-			ImageView options = (ImageView) row.findViewById(R.id.options);
+			ImageView icon = row.findViewById(R.id.icon);
+			TextView title = row.findViewById(R.id.label);
+			TextViewEx button = row.findViewById(R.id.button);
+			TextView description = row.findViewById(R.id.description);
+			ImageView expandImage = row.findViewById(R.id.expand_image);
+			ImageView options = row.findViewById(R.id.options);
 
 			final GpxDisplayGroup group = getGroup(groupPosition);
 			final GpxDisplayItem gpxItem = getChild(groupPosition, childPosition);
@@ -1166,7 +1172,7 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 				}
 			}
 
-			final CheckBox ch = (CheckBox) row.findViewById(R.id.toggle_item);
+			final CheckBox ch = row.findViewById(R.id.toggle_item);
 			if (selectionMode && gpxItem != null) {
 				ch.setVisibility(View.VISIBLE);
 				ch.setChecked(selectedItems.get(group.getType()) != null && selectedItems.get(group.getType()).contains(gpxItem));

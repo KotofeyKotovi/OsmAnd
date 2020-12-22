@@ -69,6 +69,7 @@ import net.osmand.plus.myplaces.TrackBitmapDrawer.TrackBitmapDrawerListener;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.track.SaveGpxAsyncTask;
 import net.osmand.plus.track.SaveGpxAsyncTask.SaveGpxListener;
+import net.osmand.plus.track.TrackDisplayHelper;
 import net.osmand.plus.views.controls.PagerSlidingTabStrip;
 import net.osmand.plus.views.controls.PagerSlidingTabStrip.CustomTabProvider;
 import net.osmand.plus.views.controls.WrapContentHeightViewPager;
@@ -92,9 +93,12 @@ import static net.osmand.plus.helpers.GpxUiHelper.LineGraphType.SPEED;
 
 public class TrackSegmentFragment extends OsmAndListFragment implements TrackBitmapDrawerListener {
 
+	private GpxDisplayItemType[] filterTypes;
+
 	private OsmandApplication app;
 	private TrackActivityFragmentAdapter fragmentAdapter;
 	private SegmentGPXAdapter adapter;
+	public TrackDisplayHelper displayHelper;
 
 	private boolean updateEnable;
 	private boolean chartClicked;
@@ -106,6 +110,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		this.app = getMyApplication();
+		this.displayHelper = requireTrackActivity().getDisplayHelper();
 	}
 
 	@Override
@@ -119,12 +124,14 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.track_segments_tree, container, false);
-		ListView listView = (ListView) view.findViewById(android.R.id.list);
+		ListView listView = view.findViewById(android.R.id.list);
 		listView.setDivider(null);
 		listView.setDividerHeight(0);
 
-		fragmentAdapter = new TrackActivityFragmentAdapter(app, this, listView,
-				GpxDisplayItemType.TRACK_SEGMENT);
+		filterTypes = new GpxDisplayItemType[1];
+		filterTypes[0] = GpxDisplayItemType.TRACK_SEGMENT;
+
+		fragmentAdapter = new TrackActivityFragmentAdapter(app, this, listView, displayHelper, filterTypes);
 		fragmentAdapter.setShowMapOnly(false);
 		fragmentAdapter.setTrackBitmapSelectionSupported(true);
 		fragmentAdapter.setShowDescriptionCard(false);
@@ -141,17 +148,21 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 		return (TrackActivity) getActivity();
 	}
 
+	@NonNull
+	public TrackActivity requireTrackActivity() {
+		FragmentActivity activity = getActivity();
+		if (!(activity instanceof TrackActivity)) {
+			throw new IllegalStateException("Fragment " + this + " not attached to an activity.");
+		}
+		return (TrackActivity) activity;
+	}
+
 	public ArrayAdapter<?> getAdapter() {
 		return adapter;
 	}
 
 	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		return super.onOptionsItemSelected(item);
-	}
-
-	@Override
-	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+	public void onCreateOptionsMenu(Menu menu, @NonNull MenuInflater inflater) {
 		menu.clear();
 		GPXFile gpxFile = getGpx();
 		if (gpxFile != null) {
@@ -191,14 +202,12 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 
 	@Nullable
 	private GPXFile getGpx() {
-		TrackActivity activity = getTrackActivity();
-		return activity != null ? activity.getGpx() : null;
+		return displayHelper.getGpx();
 	}
 
 	@Nullable
 	private GpxDataItem getGpxDataItem() {
-		TrackActivity activity = getTrackActivity();
-		return activity != null ? activity.getGpxDataItem() : null;
+		return displayHelper.getGpxDataItem();
 	}
 
 	@Override
@@ -250,15 +259,12 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 		List<GpxDisplayGroup> groups = getOriginalGroups();
 		if (groups != null) {
 			adapter.setNotifyOnChange(false);
-			List<GpxDisplayItem> items = flatten(groups);
-			if (items != null) {
-				for (GpxDisplayItem i : items) {
-					adapter.add(i);
-				}
-				adapter.notifyDataSetChanged();
-				if (getActivity() != null) {
-					updateHeader();
-				}
+			for (GpxDisplayItem displayItem : TrackDisplayHelper.flatten(groups)) {
+				adapter.add(displayItem);
+			}
+			adapter.notifyDataSetChanged();
+			if (getActivity() != null) {
+				updateHeader();
 			}
 		}
 	}
@@ -275,19 +281,14 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 		}
 	}
 
-	@Nullable
-	private List<GpxDisplayItem> flatten(List<GpxDisplayGroup> groups) {
-		return fragmentAdapter != null ? fragmentAdapter.flatten(groups) : null;
-	}
-
-	@Nullable
+	@NonNull
 	private List<GpxDisplayGroup> getOriginalGroups() {
-		return fragmentAdapter != null ? fragmentAdapter.getOriginalGroups() : null;
+		return displayHelper.getOriginalGroups(filterTypes);
 	}
 
-	@Nullable
+	@NonNull
 	private List<GpxDisplayGroup> getDisplayGroups() {
-		return fragmentAdapter != null ? fragmentAdapter.getDisplayGroups() : null;
+		return displayHelper.getDisplayGroups(filterTypes);
 	}
 
 	@Override
@@ -339,7 +340,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 				row = inflater.inflate(R.layout.gpx_list_item_tab_content, parent, false);
 
 				boolean light = app.getSettings().isLightContent();
-				tabLayout = (PagerSlidingTabStrip) row.findViewById(R.id.sliding_tabs);
+				tabLayout = row.findViewById(R.id.sliding_tabs);
 				tabLayout.setTabBackground(R.color.color_transparent);
 				tabLayout.setIndicatorColorResource(light ? R.color.active_color_primary_light : R.color.active_color_primary_dark);
 				tabLayout.setIndicatorBgColorResource(light ? R.color.divider_color_light : R.color.divider_color_dark);
@@ -350,13 +351,13 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 				}
 				tabLayout.setTextSize(AndroidUtils.spToPx(app, 12f));
 				tabLayout.setShouldExpand(true);
-				pager = (WrapContentHeightViewPager) row.findViewById(R.id.pager);
+				pager = row.findViewById(R.id.pager);
 				pager.setSwipeable(false);
 				pager.setOffscreenPageLimit(2);
 				create = true;
 			} else {
-				tabLayout = (PagerSlidingTabStrip) row.findViewById(R.id.sliding_tabs);
-				pager = (WrapContentHeightViewPager) row.findViewById(R.id.pager);
+				tabLayout = row.findViewById(R.id.sliding_tabs);
+				pager = row.findViewById(R.id.pager);
 			}
 			GpxDisplayItem item = getItem(position);
 			if (item != null) {
@@ -380,11 +381,11 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 	private class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, ViewAtPositionInterface {
 
 		protected SparseArray<View> views = new SparseArray<>();
-		private PagerSlidingTabStrip tabs;
-		private GpxDisplayItem gpxItem;
+		private final PagerSlidingTabStrip tabs;
+		private final GpxDisplayItem gpxItem;
 		private GPXTabItemType[] tabTypes;
 		private String[] titles;
-		private Map<GPXTabItemType, List<ILineDataSet>> dataSetsMap = new HashMap<>();
+		private final Map<GPXTabItemType, List<ILineDataSet>> dataSetsMap = new HashMap<>();
 		private TrkSegment segment;
 		private float listViewYPos;
 		private WptPt selectedWpt;
@@ -535,7 +536,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 			GPXFile gpxFile = getGpx();
 			if (gpxFile != null && gpxItem != null) {
 				GPXTrackAnalysis analysis = gpxItem.analysis;
-				final LineChart chart = (LineChart) view.findViewById(R.id.chart);
+				final LineChart chart = view.findViewById(R.id.chart);
 				chart.setHighlightPerDragEnabled(chartClicked);
 				chart.setOnClickListener(new View.OnClickListener() {
 					@SuppressLint("ClickableViewAccessibility")
@@ -677,8 +678,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 							view.findViewById(R.id.gpx_join_gaps_container).setOnClickListener(new View.OnClickListener() {
 								@Override
 								public void onClick(View v) {
-									TrackActivity activity = getTrackActivity();
-									if (activity != null && activity.setJoinSegments(!activity.isJoinSegments())) {
+									if (displayHelper.setJoinSegments(!displayHelper.isJoinSegments())) {
 										updateContent();
 										for (int i = 0; i < getCount(); i++) {
 											View view = getViewAtPosition(i);
@@ -805,8 +805,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 							view.findViewById(R.id.gpx_join_gaps_container).setOnClickListener(new View.OnClickListener() {
 								@Override
 								public void onClick(View v) {
-									TrackActivity activity = getTrackActivity();
-									if (activity != null && activity.setJoinSegments(!activity.isJoinSegments())) {
+									if (displayHelper.setJoinSegments(!displayHelper.isJoinSegments())) {
 										updateSplitView();
 										for (int i = 0; i < getCount(); i++) {
 											View view = getViewAtPosition(i);
@@ -902,8 +901,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 							view.findViewById(R.id.gpx_join_gaps_container).setOnClickListener(new View.OnClickListener() {
 								@Override
 								public void onClick(View v) {
-									TrackActivity activity = getTrackActivity();
-									if (activity != null && activity.setJoinSegments(!activity.isJoinSegments())) {
+									if (displayHelper.setJoinSegments(!displayHelper.isJoinSegments())) {
 										updateSplitView();
 										for (int i = 0; i < getCount(); i++) {
 											View view = getViewAtPosition(i);
@@ -1048,7 +1046,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 		@Override
 		public void select(View tab) {
 			GPXTabItemType tabType = GPXTabItemType.valueOf((String) tab.getTag());
-			ImageView img = (ImageView) tab.findViewById(R.id.tab_image);
+			ImageView img = tab.findViewById(R.id.tab_image);
 			int imageId = getImageId(tabType);
 			switch (tabs.getTabSelectionType()) {
 				case ALPHA:
@@ -1063,7 +1061,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 		@Override
 		public void deselect(View tab) {
 			GPXTabItemType tabType = GPXTabItemType.valueOf((String) tab.getTag());
-			ImageView img = (ImageView) tab.findViewById(R.id.tab_image);
+			ImageView img = tab.findViewById(R.id.tab_image);
 			int imageId = getImageId(tabType);
 			switch (tabs.getTabSelectionType()) {
 				case ALPHA:
@@ -1088,13 +1086,12 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 		}
 
 		void updateJoinGapsInfo(View view, int position) {
-			TrackActivity activity = getTrackActivity();
-			if (view != null && activity != null) {
+			if (view != null) {
 				GPXTrackAnalysis analysis = gpxItem.analysis;
 				GPXTabItemType tabType = tabTypes[position];
 				boolean visible = gpxItem.isGeneralTrack() && analysis != null && tabType.equals(GPXTabItemType.GPX_TAB_ITEM_GENERAL);
 				AndroidUiHelper.updateVisibility(view.findViewById(R.id.gpx_join_gaps_container), visible);
-				boolean joinSegments = activity.isJoinSegments();
+				boolean joinSegments = displayHelper.isJoinSegments();
 				((SwitchCompat) view.findViewById(R.id.gpx_join_gaps_switch)).setChecked(joinSegments);
 				if (analysis != null) {
 					if (tabType.equals(GPXTabItemType.GPX_TAB_ITEM_GENERAL)) {
@@ -1198,10 +1195,11 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 			MapActivity.launchMapActivityMoveToTop(getActivity());
 		}
 
-		private	void openSplitIntervalScreen() {
+		private void openSplitIntervalScreen() {
 			TrackActivity activity = getTrackActivity();
 			if (activity != null) {
-				SplitSegmentDialogFragment.showInstance(activity, gpxItem, getTrkSegment());
+				SplitSegmentDialogFragment.showInstance(activity.getSupportFragmentManager(), gpxItem,
+						getTrkSegment(), displayHelper.isJoinSegments());
 			}
 		}
 	}
