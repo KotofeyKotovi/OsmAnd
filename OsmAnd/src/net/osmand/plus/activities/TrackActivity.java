@@ -20,7 +20,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import net.osmand.AndroidUtils;
 import net.osmand.GPXUtilities.GPXFile;
-import net.osmand.GPXUtilities.WptPt;
 import net.osmand.IndexConstants;
 import net.osmand.data.LatLon;
 import net.osmand.data.PointDescription;
@@ -31,7 +30,6 @@ import net.osmand.plus.LockableViewPager;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.mapmarkers.CoordinateInputDialogFragment;
-import net.osmand.plus.measurementtool.GpxData;
 import net.osmand.plus.myplaces.FavoritesActivity;
 import net.osmand.plus.myplaces.SplitSegmentDialogFragment;
 import net.osmand.plus.myplaces.TrackBitmapDrawer;
@@ -139,23 +137,6 @@ public class TrackActivity extends TabActivity {
 					false,
 					newGpxPoint);
 
-			MapActivity.launchMapActivityMoveToTop(this);
-		}
-	}
-
-	public void addNewGpxData() {
-		GPXFile gpxFile = getGpx();
-		GpxData gpxData = new GpxData(gpxFile);
-		WptPt pointToShow = gpxFile != null ? gpxFile.findPointToShow() : null;
-		if (pointToShow != null) {
-			LatLon location = new LatLon(pointToShow.getLatitude(), pointToShow.getLongitude());
-			final OsmandSettings settings = app.getSettings();
-			settings.setMapLocationToShow(location.getLatitude(), location.getLongitude(),
-					settings.getLastKnownMapZoom(),
-					new PointDescription(PointDescription.POINT_TYPE_WPT, getString(R.string.add_line)),
-					false,
-					gpxData
-			);
 			MapActivity.launchMapActivityMoveToTop(this);
 		}
 	}

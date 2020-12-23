@@ -268,7 +268,7 @@ public class TrackActivityFragmentAdapter implements TrackBitmapDrawerListener {
 		vis = headerView.findViewById(R.id.showOnMapToggle);
 		final View bottomDivider = headerView.findViewById(R.id.bottom_divider);
 		GPXFile gpxFile = getGpx();
-		boolean gpxFileSelected = isGpxFileSelected(gpxFile);
+		boolean gpxFileSelected = isGpxFileSelected(app, gpxFile);
 
 		boolean hasPath = gpxFile != null && (gpxFile.tracks.size() > 0 || gpxFile.routes.size() > 0);
 		TrackActivity activity = getTrackActivity();
@@ -366,7 +366,7 @@ public class TrackActivityFragmentAdapter implements TrackBitmapDrawerListener {
 		GPXFile gpx = getGpx();
 		WptPt pointToShow = gpx != null ? gpx.findPointToShow() : null;
 		if (activity != null && pointToShow != null) {
-			boolean gpxFileSelected = isGpxFileSelected(gpx);
+			boolean gpxFileSelected = isGpxFileSelected(app, gpx);
 			if (!gpxFileSelected) {
 				Intent intent = activity.getIntent();
 				if (intent != null) {
@@ -578,7 +578,7 @@ public class TrackActivityFragmentAdapter implements TrackBitmapDrawerListener {
 		}
 	}
 
-	public boolean isGpxFileSelected(GPXFile gpxFile) {
+	public static boolean isGpxFileSelected(OsmandApplication app, GPXFile gpxFile) {
 		return gpxFile != null &&
 				((gpxFile.showCurrentTrack && app.getSelectedGpxHelper().getSelectedCurrentRecordingTrack() != null) ||
 						(gpxFile.path != null && app.getSelectedGpxHelper().getSelectedFileByPath(gpxFile.path) != null));
@@ -781,13 +781,6 @@ public class TrackActivityFragmentAdapter implements TrackBitmapDrawerListener {
 		}
 	}
 
-	public void addNewGpxData() {
-		TrackActivity activity = getTrackActivity();
-		if (activity != null) {
-			activity.addNewGpxData();
-		}
-	}
-
 	private final View.OnClickListener onFabClickListener = new View.OnClickListener() {
 		@Override
 		public void onClick(View view) {
@@ -808,7 +801,7 @@ public class TrackActivityFragmentAdapter implements TrackBitmapDrawerListener {
 						new PointDescription(PointDescription.POINT_TYPE_WPT, app.getString(R.string.add_waypoint));
 				addPoint(pointWptDescription);
 			} else if (i == R.id.route_text_layout || i == R.id.route_fab || i == R.id.line_fab) {
-				addNewGpxData();
+				displayHelper.addNewGpxData(fragment.getActivity());
 			}
 		}
 	};

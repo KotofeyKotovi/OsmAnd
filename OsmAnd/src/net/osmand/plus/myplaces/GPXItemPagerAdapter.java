@@ -54,6 +54,7 @@ import net.osmand.plus.helpers.GpxUiHelper.GPXDataSetAxisType;
 import net.osmand.plus.helpers.GpxUiHelper.GPXDataSetType;
 import net.osmand.plus.helpers.GpxUiHelper.LineGraphType;
 import net.osmand.plus.helpers.GpxUiHelper.OrderedLineDataSet;
+import net.osmand.plus.myplaces.TrackBitmapDrawer.OnUpdateSelectedPointListener;
 import net.osmand.plus.myplaces.TrackSegmentFragment.GPXTabItemType;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.track.TrackDisplayHelper;
@@ -80,7 +81,7 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 
 	private OsmandApplication app;
 	private FragmentActivity activity;
-	private TrackActivityFragmentAdapter fragmentAdapter;
+	private OnUpdateSelectedPointListener updateSelectedPoint;
 	private SparseArray<View> views = new SparseArray<>();
 	private final PagerSlidingTabStrip tabs;
 	private final GpxDisplayItem gpxItem;
@@ -104,7 +105,6 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 		this.tabs = tabs;
 		this.gpxItem = gpxItem;
 		this.displayHelper = displayHelper;
-		this.fragmentAdapter = fragmentAdapter;
 		this.activity = activity;
 		this.listener = listener;
 		this.filterTypes = filterTypes;
@@ -113,7 +113,6 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 	}
 
 	private void fetchTabTypes() {
-
 		List<GPXTabItemType> tabTypeList = new ArrayList<>();
 		tabTypeList.add(GPXTabItemType.GPX_TAB_ITEM_GENERAL);
 		if (gpxItem != null && gpxItem.analysis != null) {
@@ -237,15 +236,13 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 		final View view;
 		LayoutInflater inflater = LayoutInflater.from(container.getContext());
 		switch (tabType) {
-			case GPX_TAB_ITEM_GENERAL:
-				view = inflater.inflate(R.layout.gpx_item_general, container, false);
-				break;
 			case GPX_TAB_ITEM_ALTITUDE:
 				view = inflater.inflate(R.layout.gpx_item_altitude, container, false);
 				break;
 			case GPX_TAB_ITEM_SPEED:
 				view = inflater.inflate(R.layout.gpx_item_speed, container, false);
 				break;
+			case GPX_TAB_ITEM_GENERAL:
 			default:
 				view = inflater.inflate(R.layout.gpx_item_general, container, false);
 				break;
@@ -261,8 +258,8 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 				public void onClick(View view) {
 					if (!chartClicked) {
 						chartClicked = true;
-						if (selectedWpt != null && fragmentAdapter != null) {
-							fragmentAdapter.updateSelectedPoint(selectedWpt.lat, selectedWpt.lon);
+						if (selectedWpt != null && updateSelectedPoint != null) {
+							updateSelectedPoint.updateSelectedPoint(selectedWpt.lat, selectedWpt.lon);
 						}
 					}
 				}
@@ -295,8 +292,8 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 				public void onValueSelected(Entry e, Highlight h) {
 					WptPt wpt = getPoint(chart, h.getX());
 					selectedWpt = wpt;
-					if (chartClicked && wpt != null && fragmentAdapter != null) {
-						fragmentAdapter.updateSelectedPoint(wpt.lat, wpt.lon);
+					if (chartClicked && wpt != null && updateSelectedPoint != null) {
+						updateSelectedPoint.updateSelectedPoint(wpt.lat, wpt.lon);
 					}
 				}
 
@@ -364,8 +361,8 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 						if (h != null) {
 							chart.highlightValue(h);
 							WptPt wpt = getPoint(chart, h.getX());
-							if (wpt != null && fragmentAdapter != null) {
-								fragmentAdapter.updateSelectedPoint(wpt.lat, wpt.lon);
+							if (wpt != null && updateSelectedPoint != null) {
+								updateSelectedPoint.updateSelectedPoint(wpt.lat, wpt.lon);
 							}
 						}
 					}
@@ -528,7 +525,7 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 							@Override
 							public void onClick(View v) {
 								if (displayHelper.setJoinSegments(!displayHelper.isJoinSegments())) {
-									fragmentAdapter.updateSplitView();
+//									fragmentAdapter.updateSplitView(); TODO
 									for (int i = 0; i < getCount(); i++) {
 										View view = getViewAtPosition(i);
 										updateJoinGapsInfo(view, i);
@@ -626,7 +623,7 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 							@Override
 							public void onClick(View v) {
 								if (displayHelper.setJoinSegments(!displayHelper.isJoinSegments())) {
-									fragmentAdapter.updateSplitView();
+//									fragmentAdapter.updateSplitView();TODO
 									for (int i = 0; i < getCount(); i++) {
 										View view = getViewAtPosition(i);
 										updateJoinGapsInfo(view, i);
@@ -700,17 +697,14 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 	}
 
 	private void editSegment() {
-		TrkSegment segment = getTrkSegment();
-		if (segment != null && fragmentAdapter != null) {
-			fragmentAdapter.addNewGpxData();
-		}
+		displayHelper.addNewGpxData(activity);
 	}
 
 	private void deleteAndSaveSegment() {
 		if (activity != null && deleteSegment()) {
 			GPXFile gpx = displayHelper.getGpx();
-			if (gpx != null && fragmentAdapter != null) {
-				boolean showOnMap = fragmentAdapter.isShowOnMap();
+			if (gpx != null) {
+				boolean showOnMap = TrackActivityFragmentAdapter.isGpxFileSelected(app, gpx);
 				SelectedGpxFile selectedGpxFile = app.getSelectedGpxHelper().selectGpxFile(gpx, showOnMap, false);
 				TrackSegmentFragment.saveGpx(showOnMap ? selectedGpxFile : null, gpx, (ActionBarProgressActivity) activity, app, displayHelper, filterTypes, listener);
 			}

@@ -690,14 +690,11 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 		} else {
 			GPXFile gpx = item.group.getGpx();
 			if (gpx != null) {
-				FragmentActivity trackActivity = getActivity();
-				if (trackActivity != null && fragmentAdapter != null) {
-					boolean gpxFileSelected = fragmentAdapter.isGpxFileSelected(gpx);
-					if (!gpxFileSelected) {
-						Intent intent = trackActivity.getIntent();
-						if (intent != null) {
-							intent.putExtra(TrackActivity.SHOW_TEMPORARILY, true);
-						}
+				FragmentActivity activity = getActivity();
+				if (activity != null && !TrackActivityFragmentAdapter.isGpxFileSelected(app, gpx)) {
+					Intent intent = activity.getIntent();
+					if (intent != null) {
+						intent.putExtra(TrackActivity.SHOW_TEMPORARILY, true);
 					}
 				}
 				app.getSelectedGpxHelper().setGpxFileToDisplay(gpx);

@@ -72,7 +72,7 @@ public class TrackBitmapDrawer {
 	}
 
 	public TrackBitmapDrawer(@NonNull OsmandApplication app, @NonNull GPXFile gpxFile,
-	                         @Nullable GpxDataItem gpxDataItem, @NonNull QuadRect rect, float density, int widthPixels, int heightPixels) {
+							 @Nullable GpxDataItem gpxDataItem, @NonNull QuadRect rect, float density, int widthPixels, int heightPixels) {
 		this.density = density;
 		this.widthPixels = widthPixels;
 		this.heightPixels = heightPixels;
@@ -305,5 +305,9 @@ public class TrackBitmapDrawer {
 				l.drawTrackBitmap(bmp);
 			}
 		}
+	}
+
+	interface OnUpdateSelectedPointListener {
+		void updateSelectedPoint(double lat, double lon);
 	}
 }
