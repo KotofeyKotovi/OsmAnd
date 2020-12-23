@@ -733,7 +733,7 @@ public class TrackActivityFragmentAdapter implements TrackBitmapDrawerListener {
 		if (gpxFile != null) {
 			SelectedGpxFile sf = app.getSelectedGpxHelper().selectGpxFile(gpxFile,
 					((SwitchCompat) headerView.findViewById(R.id.showOnMapToggle)).isChecked(), false);
-			final List<GpxDisplayGroup> groups = getDisplayGroups();
+			List<GpxDisplayGroup> groups = getDisplayGroups();
 			if (groups.size() > 0) {
 				updateSplit(groups, ((SwitchCompat) headerView.findViewById(R.id.showOnMapToggle)).isChecked() ? sf : null);
 				if (getGpxDataItem() != null) {

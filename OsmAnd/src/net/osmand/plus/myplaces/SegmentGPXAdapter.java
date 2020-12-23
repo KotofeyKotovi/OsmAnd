@@ -8,11 +8,9 @@ import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentActivity;
 
 import net.osmand.AndroidUtils;
 import net.osmand.plus.GpxSelectionHelper.GpxDisplayItem;
-import net.osmand.plus.GpxSelectionHelper.GpxDisplayItemType;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.track.TrackDisplayHelper;
@@ -24,23 +22,16 @@ import java.util.List;
 class SegmentGPXAdapter extends ArrayAdapter<GpxDisplayItem> {
 
 	private OsmandApplication app;
-	private FragmentActivity activity;
-	private TrackActivityFragmentAdapter fragmentAdapter;
-	public TrackDisplayHelper displayHelper;
-	private GpxDisplayItemType[] filterTypes;
-	private OnUpdateContentListener listener;
+	private TrackDisplayHelper displayHelper;
+	private SegmentActionsListener segmentActionsListener;
 
-	SegmentGPXAdapter(@NonNull Context context, @NonNull List<GpxDisplayItem> items, TrackDisplayHelper displayHelper,
-					  FragmentActivity activity, TrackActivityFragmentAdapter fragmentAdapter,
-					  GpxDisplayItemType[] filterTypes, OnUpdateContentListener listener) {
+	SegmentGPXAdapter(@NonNull Context context, @NonNull List<GpxDisplayItem> items,
+					  @NonNull TrackDisplayHelper displayHelper,
+					  @NonNull SegmentActionsListener segmentActionsListener) {
 		super(context, R.layout.gpx_list_item_tab_content, items);
-
-		this.app = (OsmandApplication) activity.getApplication();
-		this.activity = activity;
-		this.fragmentAdapter = fragmentAdapter;
+		this.app = (OsmandApplication) context.getApplicationContext();
 		this.displayHelper = displayHelper;
-		this.filterTypes = filterTypes;
-		this.listener = listener;
+		this.segmentActionsListener = segmentActionsListener;
 	}
 
 	@Override
@@ -81,7 +72,7 @@ class SegmentGPXAdapter extends ArrayAdapter<GpxDisplayItem> {
 		}
 		GpxDisplayItem item = getItem(position);
 		if (item != null) {
-			pager.setAdapter(new GPXItemPagerAdapter(tabLayout, item, displayHelper, fragmentAdapter, activity, listener, filterTypes));
+			pager.setAdapter(new GPXItemPagerAdapter(tabLayout, item, displayHelper, segmentActionsListener));
 			if (create) {
 				tabLayout.setViewPager(pager);
 			} else {

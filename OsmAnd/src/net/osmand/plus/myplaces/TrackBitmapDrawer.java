@@ -306,8 +306,4 @@ public class TrackBitmapDrawer {
 			}
 		}
 	}
-
-	interface OnUpdateSelectedPointListener {
-		void updateSelectedPoint(double lat, double lon);
-	}
 }
