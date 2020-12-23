@@ -594,7 +594,7 @@ public class TrackActivityFragmentAdapter implements TrackBitmapDrawerListener {
 				if (groups.size() > 0) {
 					updateSplit(groups, visible ? sf : null);
 					if (getGpxDataItem() != null) {
-						updateSplitInDatabase();
+						displayHelper.updateSplitInDatabase();
 					}
 				}
 			}
@@ -691,7 +691,7 @@ public class TrackActivityFragmentAdapter implements TrackBitmapDrawerListener {
 	private void updateSplit(@NonNull List<GpxDisplayGroup> groups, @Nullable final SelectedGpxFile selectedGpx) {
 		GPXFile gpxFile = getGpx();
 		TrackActivity activity = getTrackActivity();
-		GpxSplitType gpxSplitType = getGpxSplitType();
+		GpxSplitType gpxSplitType = displayHelper.getGpxSplitType();
 		if (activity != null && gpxSplitType != null && gpxFile != null) {
 			int timeSplit = 0;
 			double distanceSplit = 0;
@@ -728,36 +728,6 @@ public class TrackActivityFragmentAdapter implements TrackBitmapDrawerListener {
 		}
 	}
 
-	private GpxSplitType getGpxSplitType() {
-		if (displayHelper.selectedSplitInterval == 0) {
-			return GpxSplitType.NO_SPLIT;
-		} else if (displayHelper.distanceSplit.get(displayHelper.selectedSplitInterval) > 0) {
-			return GpxSplitType.DISTANCE;
-		} else if (displayHelper.timeSplit.get(displayHelper.selectedSplitInterval) > 0) {
-			return GpxSplitType.TIME;
-		}
-		return null;
-	}
-
-	private void updateSplitInDatabase() {
-		double splitInterval = 0;
-		GpxSplitType splitType = null;
-		if (displayHelper.selectedSplitInterval == 0) {
-			splitType = GpxSplitType.NO_SPLIT;
-			splitInterval = 0;
-		} else if (displayHelper.distanceSplit.get(displayHelper.selectedSplitInterval) > 0) {
-			splitType = GpxSplitType.DISTANCE;
-			splitInterval = displayHelper.distanceSplit.get(displayHelper.selectedSplitInterval);
-		} else if (displayHelper.timeSplit.get(displayHelper.selectedSplitInterval) > 0) {
-			splitType = GpxSplitType.TIME;
-			splitInterval = displayHelper.timeSplit.get(displayHelper.selectedSplitInterval);
-		}
-		GpxDataItem item = getGpxDataItem();
-		if (item != null && splitType != null) {
-			app.getGpxDbHelper().updateSplit(item, splitType, splitInterval);
-		}
-	}
-
 	public void updateSplitView() {
 		GPXFile gpxFile = getGpx();
 		if (gpxFile != null) {
@@ -767,7 +737,7 @@ public class TrackActivityFragmentAdapter implements TrackBitmapDrawerListener {
 			if (groups.size() > 0) {
 				updateSplit(groups, ((SwitchCompat) headerView.findViewById(R.id.showOnMapToggle)).isChecked() ? sf : null);
 				if (getGpxDataItem() != null) {
-					updateSplitInDatabase();
+					displayHelper.updateSplitInDatabase();
 				}
 			}
 			updateSplitIntervalView(headerView.findViewById(R.id.split_interval_view));

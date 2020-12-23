@@ -78,6 +78,35 @@ public class TrackDisplayHelper {
 		addOptionSplit(3600, false, groups);
 	}
 
+	public GpxSplitType getGpxSplitType() {
+		if (selectedSplitInterval == 0) {
+			return GpxSplitType.NO_SPLIT;
+		} else if (distanceSplit.get(selectedSplitInterval) > 0) {
+			return GpxSplitType.DISTANCE;
+		} else if (timeSplit.get(selectedSplitInterval) > 0) {
+			return GpxSplitType.TIME;
+		}
+		return null;
+	}
+
+	public void updateSplitInDatabase() {
+		double splitInterval = 0;
+		GpxSplitType splitType = null;
+		if (selectedSplitInterval == 0) {
+			splitType = GpxSplitType.NO_SPLIT;
+			splitInterval = 0;
+		} else if (distanceSplit.get(selectedSplitInterval) > 0) {
+			splitType = GpxSplitType.DISTANCE;
+			splitInterval = distanceSplit.get(selectedSplitInterval);
+		} else if (timeSplit.get(selectedSplitInterval) > 0) {
+			splitType = GpxSplitType.TIME;
+			splitInterval = timeSplit.get(selectedSplitInterval);
+		}
+		GpxDataItem item = getGpxDataItem();
+		if (item != null && splitType != null) {
+			app.getGpxDbHelper().updateSplit(item, splitType, splitInterval);
+		}
+	}
 
 	private void addOptionSplit(int value, boolean distance, @NonNull List<GpxDisplayGroup> model) {
 		if (model.size() > 0) {
