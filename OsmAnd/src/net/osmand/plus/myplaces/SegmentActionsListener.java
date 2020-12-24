@@ -7,7 +7,7 @@ import net.osmand.plus.GpxSelectionHelper.GpxDisplayItem;
 
 import java.util.List;
 
-interface SegmentActionsListener {
+public interface SegmentActionsListener {
 
 	void editSegment();
 

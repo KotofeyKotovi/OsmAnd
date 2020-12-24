@@ -59,7 +59,7 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 
 	private IconPopupMenu generalPopupMenu;
 	private IconPopupMenu altitudePopupMenu;
-	private GpxDisplayItemType[] filterTypes;
+	private GpxDisplayItemType[] filterTypes = new GpxDisplayItemType[] {GpxDisplayItemType.TRACK_SEGMENT};
 
 	private boolean updateEnable;
 
@@ -84,9 +84,6 @@ public class TrackSegmentFragment extends OsmAndListFragment implements TrackBit
 		ListView listView = view.findViewById(android.R.id.list);
 		listView.setDivider(null);
 		listView.setDividerHeight(0);
-
-		filterTypes = new GpxDisplayItemType[1];
-		filterTypes[0] = GpxDisplayItemType.TRACK_SEGMENT;
 
 		fragmentAdapter = new TrackActivityFragmentAdapter(app, this, listView, displayHelper, filterTypes);
 		fragmentAdapter.setShowMapOnly(false);

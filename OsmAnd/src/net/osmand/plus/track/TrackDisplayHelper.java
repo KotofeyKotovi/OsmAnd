@@ -42,7 +42,6 @@ public class TrackDisplayHelper {
 
 	private long modifiedTime = -1;
 
-
 	public final List<String> options = new ArrayList<>();
 	public final List<Double> distanceSplit = new ArrayList<>();
 	public final TIntArrayList timeSplit = new TIntArrayList();
@@ -51,7 +50,6 @@ public class TrackDisplayHelper {
 	public TrackDisplayHelper(OsmandApplication app) {
 		this.app = app;
 	}
-
 
 	public void prepareSplitIntervalAdapterData(GpxDisplayItemType[] filterTypes) {
 		final List<GpxDisplayGroup> groups = getDisplayGroups(filterTypes);

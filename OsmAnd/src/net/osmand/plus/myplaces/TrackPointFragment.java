@@ -104,8 +104,8 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 	private OsmandApplication app;
 	private TrackActivityFragmentAdapter fragmentAdapter;
 	final private PointGPXAdapter adapter = new PointGPXAdapter();
-	private GpxDisplayItemType[] filterTypes;
-	public TrackDisplayHelper displayHelper;
+	private GpxDisplayItemType[] filterTypes = new GpxDisplayItemType[] {GpxDisplayItemType.TRACK_POINTS, GpxDisplayItemType.TRACK_ROUTE_POINTS};
+	private TrackDisplayHelper displayHelper;
 
 	private boolean selectionMode;
 	private final LinkedHashMap<GpxDisplayItemType, Set<GpxDisplayItem>> selectedItems = new LinkedHashMap<>();
@@ -136,10 +136,6 @@ public class TrackPointFragment extends OsmandExpandableListFragment implements 
 	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		mainView = inflater.inflate(R.layout.track_points_tree, container, false);
 		ExpandableListView listView = mainView.findViewById(android.R.id.list);
-
-		filterTypes = new GpxDisplayItemType[2];
-		filterTypes[0] = GpxDisplayItemType.TRACK_POINTS;
-		filterTypes[1] = GpxDisplayItemType.TRACK_ROUTE_POINTS;
 
 		fragmentAdapter = new TrackActivityFragmentAdapter(app, this, listView, displayHelper, filterTypes);
 		fragmentAdapter.setShowMapOnly(true);

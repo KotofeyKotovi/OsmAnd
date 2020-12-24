@@ -64,7 +64,7 @@ import static net.osmand.plus.helpers.GpxUiHelper.LineGraphType.ALTITUDE;
 import static net.osmand.plus.helpers.GpxUiHelper.LineGraphType.SLOPE;
 import static net.osmand.plus.helpers.GpxUiHelper.LineGraphType.SPEED;
 
-class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, ViewAtPositionInterface {
+public class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, ViewAtPositionInterface {
 
 	private OsmandApplication app;
 	private UiUtilities iconsCache;
@@ -83,10 +83,10 @@ class GPXItemPagerAdapter extends PagerAdapter implements CustomTabProvider, Vie
 	private boolean chartClicked;
 
 
-	GPXItemPagerAdapter(PagerSlidingTabStrip tabs,
-						GpxDisplayItem gpxItem,
-						TrackDisplayHelper displayHelper,
-						SegmentActionsListener segmentActionsListener) {
+	public GPXItemPagerAdapter(PagerSlidingTabStrip tabs,
+							   GpxDisplayItem gpxItem,
+							   TrackDisplayHelper displayHelper,
+							   SegmentActionsListener segmentActionsListener) {
 		super();
 		this.tabs = tabs;
 		this.gpxItem = gpxItem;
